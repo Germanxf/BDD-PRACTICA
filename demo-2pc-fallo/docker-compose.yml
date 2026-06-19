@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  inventario:
+    image: python:3.9-slim
+    volumes:
+      - ./scripts:/app
+    command: python /app/participante.py 8001 Inventario
+    ports:
+      - "8001:8001"
+
+  facturacion:
+    image: python:3.9-slim
+    volumes:
+      - ./scripts:/app
+    command: python /app/participante.py 8002 Facturación
+    ports:
+      - "8002:8002"
+
+  coordinador:
+    image: python:3.9-slim
+    volumes:
+      - ./scripts:/app
+    command: python /app/coordinador.py
+    ports:
+      - "8000:8000"
+    depends_on:
+      - inventario
+      - facturacion
