@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   inventario:
     image: python:3.9-slim
@@ -12,7 +13,7 @@ services:
     image: python:3.9-slim
     volumes:
       - ./scripts:/app
-    command: python /app/participante.py 8002 Facturación
+    command: python /app/participante.py 8002 Facturacion
     ports:
       - "8002:8002"
 
@@ -23,6 +24,9 @@ services:
     command: python /app/coordinador.py
     ports:
       - "8000:8000"
+    environment:
+      # Cambiar a "1" para demostrar el bloqueo del 2PC, "0" para flujo exitoso
+      - MODO_FALLO=${MODO_FALLO:-0}
     depends_on:
       - inventario
       - facturacion
