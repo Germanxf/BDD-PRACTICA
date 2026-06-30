@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+
+  # ── Base de datos Inventario ─────────────────────────────────
+  db_inventario:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB:       inventario_db
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./inventario/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventario_db"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  # ── Base de datos Facturación ────────────────────────────────
+  db_facturacion:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB:       facturacion_db
+      POSTGRES_USER:     postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./facturacion/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d facturacion_db"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  # ── Participante: Inventario ─────────────────────────────────
+  inventario:
+    build: ./inventario
+    environment:
+      PORT:    8001
+      NAME:    Inventario
+      DB_HOST: db_inventario
+      DB_NAME: inventario_db
+      DB_USER: postgres
+      DB_PASS: postgres
+    ports:
+      - "8001:8001"
+    depends_on:
+      db_inventario:
+        condition: service_healthy
+
+  # ── Participante: Facturación ────────────────────────────────
+  facturacion:
+    build: ./facturacion
+    environment:
+      PORT:    8002
+      NAME:    Facturacion
+      DB_HOST: db_facturacion
+      DB_NAME: facturacion_db
+      DB_USER: postgres
+      DB_PASS: postgres
+    ports:
+      - "8002:8002"
+    depends_on:
+      db_facturacion:
+        condition: service_healthy
+
+  # ── Coordinador 2PC ──────────────────────────────────────────
+  coordinador:
+    build: ./coordinador
+    environment:
+      MODO_FALLO: "${MODO_FALLO:-0}"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - inventario
+      - facturacion
